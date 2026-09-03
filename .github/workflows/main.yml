@@ -11,20 +11,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+
+      # ==============================
+      # 1. CHECKOUT
+      # ==============================
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      # ==============================
+      # 2. NODE.JS
+      # ==============================
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
+      # ==============================
+      # 3. JAVA
+      # ==============================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
+      # ==============================
+      # 4. CREATE PACKAGE.JSON
+      # ==============================
       - name: Create package.json
         run: |
           cat > package.json <<'EOF'
@@ -45,190 +58,537 @@ jobs:
               "react-dom": "^19.1.0",
               "vite": "^7.1.0"
             },
-            "devDependencies": {}
+            "devDependencies": {
+              "typescript": "^5.7.2"
+            }
           }
           EOF
 
+      # ==============================
+      # 5. CREATE INDEX.HTML
+      # ==============================
       - name: Create index.html
         run: |
           mkdir -p src
 
           cat > index.html <<'EOF'
           <!DOCTYPE html>
-          <html>
+          <html lang="en">
+
           <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta name="theme-color" content="#0b132b">
+
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0"
+            >
+
+            <meta
+              name="theme-color"
+              content="#0b132b"
+            >
+
             <title>Steven Health AI</title>
           </head>
+
           <body>
+
             <div id="root"></div>
-            <script type="module" src="/src/main.jsx"></script>
+
+            <script
+              type="module"
+              src="/src/main.jsx"
+            ></script>
+
           </body>
+
           </html>
           EOF
 
-      - name: Create React app
+      # ==============================
+      # 6. CREATE REACT ENTRY
+      # ==============================
+      - name: Create main.jsx
         run: |
           cat > src/main.jsx <<'EOF'
-          import React, { useState } from "react";
+          import React from "react";
           import { createRoot } from "react-dom/client";
+          import App from "./App.jsx";
 
-          function App() {
+          createRoot(
+            document.getElementById("root")
+          ).render(
+            <React.StrictMode>
+              <App />
+            </React.StrictMode>
+          );
+          EOF
+
+      # ==============================
+      # 7. CREATE STEVEN HEALTH AI APP
+      # ==============================
+      - name: Create App.jsx
+        run: |
+          cat > src/App.jsx <<'EOF'
+          import React, { useState } from "react";
+
+          export default function App() {
+
+            const [language, setLanguage] = useState("English");
+
             const [input, setInput] = useState("");
+
             const [messages, setMessages] = useState([
               {
                 role: "assistant",
-                text: "Welcome to Steven Health AI. Ask me a health education question."
+                text:
+                  "Welcome to Steven Health AI. How can I help you today?"
               }
             ]);
 
+            const modes = [
+              "Clinical Officer Tutor",
+              "OSCE Examiner",
+              "Emergency Medicine",
+              "Pediatrics",
+              "OBGYN",
+              "Nutrition",
+              "Pharmacology"
+            ];
+
             function sendMessage() {
-              if (!input.trim()) return;
 
               const question = input.trim();
 
-              setMessages(prev => [
-                ...prev,
-                { role: "user", text: question },
+              if (!question) return;
+
+              setMessages((previous) => [
+
+                ...previous,
+
+                {
+                  role: "user",
+                  text: question
+                },
+
                 {
                   role: "assistant",
-                  text: "Steven Health AI is ready. The secure AI backend will be connected next."
+                  text:
+                    language === "Kiswahili"
+                      ? "Steven Health AI iko tayari. Muunganisho wa AI backend utaongezwa katika hatua inayofuata."
+                      : "Steven Health AI is ready. The secure AI backend connection will be added in the next stage."
                 }
+
               ]);
 
               setInput("");
             }
 
             return (
-              <div style={{
-                minHeight: "100vh",
-                background: "#f4f7fb",
-                fontFamily: "Arial",
-                display: "flex",
-                flexDirection: "column"
-              }}>
 
-                <header style={{
-                  background: "#0b132b",
-                  color: "white",
-                  padding: "20px"
-                }}>
-                  <h1 style={{margin: 0}}>Steven Health AI</h1>
-                  <p>Health Education AI for Africa</p>
-                </header>
+              <div className="app">
 
-                <main style={{
-                  width: "100%",
-                  maxWidth: "900px",
-                  margin: "auto",
-                  padding: "20px",
-                  flex: 1
-                }}>
+                {/* HEADER */}
 
-                  <div style={{
-                    background: "white",
-                    padding: "20px",
-                    borderRadius: "15px",
-                    marginBottom: "20px"
-                  }}>
-                    <h2>AI Health Assistant</h2>
+                <header className="header">
+
+                  <div>
+
+                    <h1>
+                      Steven Health AI
+                    </h1>
+
                     <p>
-                      English + Kiswahili support
+                      Health Education AI for Africa
                     </p>
+
                   </div>
 
-                  <div style={{
-                    background: "white",
-                    padding: "20px",
-                    borderRadius: "15px"
-                  }}>
+                  <div className="headerRight">
 
-                    <div style={{
-                      minHeight: "350px",
-                      overflowY: "auto"
-                    }}>
+                    <span className="status">
+                      ● AI READY
+                    </span>
 
-                      {messages.map((msg, index) => (
-                        <div
-                          key={index}
-                          style={{
-                            padding: "12px",
-                            marginBottom: "10px",
-                            borderRadius: "10px",
-                            background:
-                              msg.role === "user"
-                                ? "#dce9ff"
-                                : "#eef1f5"
-                          }}
+                    <select
+                      value={language}
+                      onChange={(e) =>
+                        setLanguage(e.target.value)
+                      }
+                    >
+
+                      <option>
+                        English
+                      </option>
+
+                      <option>
+                        Kiswahili
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                </header>
+
+
+                {/* MAIN */}
+
+                <main className="main">
+
+                  {/* WELCOME */}
+
+                  <section className="welcome">
+
+                    <h2>
+                      Steven Health AI
+                    </h2>
+
+                    <p>
+                      Intelligent health education assistant
+                      designed for Africa.
+                    </p>
+
+                    <div className="language">
+                      Language: <strong>{language}</strong>
+                    </div>
+
+                  </section>
+
+
+                  {/* AI MODES */}
+
+                  <section className="card">
+
+                    <h2>
+                      AI Modes
+                    </h2>
+
+                    <div className="modes">
+
+                      {modes.map((mode) => (
+
+                        <button
+                          key={mode}
+                          onClick={() =>
+                            setInput(
+                              `Help me with ${mode}`
+                            )
+                          }
                         >
-                          <strong>
-                            {msg.role === "user"
-                              ? "You"
-                              : "Steven Health AI"}
-                          </strong>
+                          {mode}
+                        </button>
 
-                          <p>{msg.text}</p>
-                        </div>
                       ))}
 
                     </div>
 
-                    <div style={{
-                      display: "flex",
-                      gap: "10px"
-                    }}>
+                  </section>
+
+
+                  {/* CHAT */}
+
+                  <section className="chat card">
+
+                    <h2>
+                      AI Assistant
+                    </h2>
+
+                    <div className="messages">
+
+                      {messages.map(
+                        (message, index) => (
+
+                          <div
+                            key={index}
+                            className={
+                              message.role === "user"
+                                ? "message user"
+                                : "message assistant"
+                            }
+                          >
+
+                            <strong>
+
+                              {message.role === "user"
+                                ? "You"
+                                : "Steven Health AI"}
+
+                            </strong>
+
+                            <p>
+                              {message.text}
+                            </p>
+
+                          </div>
+
+                        )
+                      )}
+
+                    </div>
+
+
+                    {/* INPUT */}
+
+                    <div className="inputArea">
 
                       <textarea
                         value={input}
-                        onChange={e => setInput(e.target.value)}
-                        placeholder="Ask Steven Health AI..."
-                        style={{
-                          flex: 1,
-                          minHeight: "60px",
-                          padding: "12px",
-                          borderRadius: "10px",
-                          border: "1px solid #ccc"
+                        onChange={(e) =>
+                          setInput(e.target.value)
+                        }
+                        placeholder={
+                          language === "Kiswahili"
+                            ? "Uliza Steven Health AI..."
+                            : "Ask Steven Health AI..."
+                        }
+                        onKeyDown={(e) => {
+
+                          if (
+                            e.key === "Enter" &&
+                            !e.shiftKey
+                          ) {
+
+                            e.preventDefault();
+
+                            sendMessage();
+
+                          }
+
                         }}
                       />
 
                       <button
+                        className="send"
                         onClick={sendMessage}
-                        style={{
-                          padding: "0 20px",
-                          border: "none",
-                          borderRadius: "10px",
-                          background: "#0b132b",
-                          color: "white",
-                          fontWeight: "bold"
-                        }}
                       >
                         Send
                       </button>
 
                     </div>
 
-                  </div>
+                  </section>
 
                 </main>
 
-                <footer style={{
-                  textAlign: "center",
-                  padding: "15px"
-                }}>
+
+                {/* FOOTER */}
+
+                <footer>
+
                   Steven Health AI © 2026
+
                 </footer>
+
+
+                {/* CSS */}
+
+                <style>{`
+
+                  * {
+                    box-sizing: border-box;
+                  }
+
+                  body {
+                    margin: 0;
+                    font-family: Arial, sans-serif;
+                    background: #f4f7fb;
+                    color: #172033;
+                  }
+
+                  .app {
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                  }
+
+                  .header {
+                    background: #0b132b;
+                    color: white;
+                    padding: 18px 22px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 15px;
+                  }
+
+                  .header h1 {
+                    margin: 0;
+                    font-size: 24px;
+                  }
+
+                  .header p {
+                    margin: 5px 0 0;
+                    opacity: 0.75;
+                  }
+
+                  .headerRight {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                  }
+
+                  .status {
+                    font-size: 12px;
+                    font-weight: bold;
+                  }
+
+                  select {
+                    padding: 8px;
+                    border-radius: 8px;
+                    border: none;
+                  }
+
+                  .main {
+                    width: 100%;
+                    max-width: 1000px;
+                    margin: auto;
+                    padding: 25px 15px;
+                    flex: 1;
+                  }
+
+                  .welcome {
+                    background: white;
+                    padding: 25px;
+                    border-radius: 16px;
+                    margin-bottom: 20px;
+                  }
+
+                  .welcome h2 {
+                    margin-top: 0;
+                  }
+
+                  .language {
+                    margin-top: 15px;
+                  }
+
+                  .card {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 16px;
+                    margin-bottom: 20px;
+                  }
+
+                  .card h2 {
+                    margin-top: 0;
+                  }
+
+                  .modes {
+                    display: grid;
+                    grid-template-columns:
+                      repeat(
+                        auto-fit,
+                        minmax(150px, 1fr)
+                      );
+                    gap: 10px;
+                  }
+
+                  .modes button {
+                    padding: 14px;
+                    border: none;
+                    border-radius: 10px;
+                    background: #e8eef8;
+                    cursor: pointer;
+                    font-weight: 600;
+                  }
+
+                  .modes button:hover {
+                    opacity: 0.8;
+                  }
+
+                  .messages {
+                    min-height: 350px;
+                    max-height: 500px;
+                    overflow-y: auto;
+                    padding: 5px;
+                  }
+
+                  .message {
+                    padding: 13px;
+                    margin-bottom: 12px;
+                    border-radius: 12px;
+                    max-width: 85%;
+                  }
+
+                  .message p {
+                    margin-bottom: 0;
+                    line-height: 1.5;
+                  }
+
+                  .assistant {
+                    background: #eef3f9;
+                  }
+
+                  .user {
+                    background: #dce9ff;
+                    margin-left: auto;
+                  }
+
+                  .inputArea {
+                    display: flex;
+                    gap: 10px;
+                    margin-top: 15px;
+                  }
+
+                  textarea {
+                    flex: 1;
+                    min-height: 60px;
+                    resize: none;
+                    padding: 13px;
+                    border: 1px solid #ccd5e2;
+                    border-radius: 10px;
+                    font-size: 15px;
+                  }
+
+                  .send {
+                    border: none;
+                    border-radius: 10px;
+                    padding: 0 25px;
+                    background: #0b132b;
+                    color: white;
+                    font-weight: bold;
+                    cursor: pointer;
+                  }
+
+                  footer {
+                    text-align: center;
+                    padding: 18px;
+                    opacity: 0.6;
+                    font-size: 12px;
+                  }
+
+                  @media (max-width: 600px) {
+
+                    .header {
+                      flex-direction: column;
+                      align-items: flex-start;
+                    }
+
+                    .headerRight {
+                      width: 100%;
+                      justify-content: space-between;
+                    }
+
+                    .inputArea {
+                      flex-direction: column;
+                    }
+
+                    .send {
+                      height: 50px;
+                    }
+
+                  }
+
+                `}</style>
 
               </div>
             );
           }
-
-          createRoot(document.getElementById("root")).render(
-            <App />
-          );
           EOF
 
+      # ==============================
+      # 8. VITE CONFIG
+      # ==============================
       - name: Create Vite config
         run: |
           cat > vite.config.js <<'EOF'
@@ -236,44 +596,79 @@ jobs:
           import react from "@vitejs/plugin-react";
 
           export default defineConfig({
-            plugins: [react()]
+            plugins: [react()],
+
+            build: {
+              outDir: "dist"
+            }
           });
           EOF
 
+      # ==============================
+      # 9. CAPACITOR CONFIG
+      # ==============================
       - name: Create Capacitor config
         run: |
           cat > capacitor.config.ts <<'EOF'
           import type { CapacitorConfig } from "@capacitor/cli";
 
           const config: CapacitorConfig = {
-            appId: "com.stevenhealthai.app",
-            appName: "Steven Health AI",
-            webDir: "dist"
+
+            appId:
+              "com.stevenhealthai.app",
+
+            appName:
+              "Steven Health AI",
+
+            webDir:
+              "dist"
+
           };
 
           export default config;
           EOF
 
+      # ==============================
+      # 10. INSTALL
+      # ==============================
       - name: Install dependencies
         run: npm install
 
-      - name: Build web app
+      # ==============================
+      # 11. BUILD WEB
+      # ==============================
+      - name: Build web application
         run: npm run build
 
-      - name: Add Android
-        run: npx cap add android
+      # ==============================
+      # 12. ADD ANDROID
+      # ==============================
+      - name: Add Android platform
+        run: |
+          npx cap add android
 
-      - name: Sync Android
-        run: npx cap sync android
+      # ==============================
+      # 13. SYNC ANDROID
+      # ==============================
+      - name: Sync Capacitor
+        run: |
+          npx cap sync android
 
-      - name: Build APK
+      # ==============================
+      # 14. BUILD APK
+      # ==============================
+      - name: Build Android APK
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
+      # ==============================
+      # 15. UPLOAD APK
+      # ==============================
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Steven-Health-AI-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
