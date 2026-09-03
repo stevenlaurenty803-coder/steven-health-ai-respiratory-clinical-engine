@@ -9,52 +9,37 @@ jobs:
 
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      OPENROUTER_API_URL: "https://openrouter.ai/api/v1/chat/completions"
-      OPENROUTER_MODEL: "openai/gpt-4o-mini"
+      OPENROUTER_API_URL: https://openrouter.ai/api/v1/chat/completions
+      OPENROUTER_MODEL: openai/gpt-4o-mini
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Find project files
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Repository contents:"
-          ls -la
-          echo "Finding package.json:"
-          find . -name package.json -not -path './.git/*'
-          echo "Finding capacitor.config:"
-          find . -iname '*capacitor*' -not -path './.git/*'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: 21
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
+      - name: Install
         run: npm install
 
-      - name: Build web app
+      - name: Build App
         run: npm run build
 
-      - name: Sync Capacitor Android
+      - name: Capacitor Sync
         run: npx cap sync android
 
-      - name: Make Gradle executable
-        run: chmod +x android/gradlew
+      - name: Build APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug
 
-      - name: Build Debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug
-
-      - name: Upload APK
+      - name: Get APK
         uses: actions/upload-artifact@v4
         with:
           name: Steven-Health-AI-APK
