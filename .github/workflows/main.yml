@@ -1,0 +1,122 @@
+export interface RespiratoryCase {
+  age?: number;
+  sex?: string;
+  symptoms: string[];
+  duration?: string;
+  vitalSigns?: {
+    respiratoryRate?: number;
+    oxygenSaturation?: number;
+    temperature?: number;
+    heartRate?: number;
+  };
+}
+
+export interface RespiratoryAssessment {
+  severity: "mild" | "moderate" | "severe" | "critical" | "unknown";
+  redFlags: string[];
+  possibleConditions: string[];
+  recommendedAssessment: string[];
+  emergencyAction: string[];
+}
+
+export class RespiratoryClinicalEngine {
+  assessCase(caseData: RespiratoryCase): RespiratoryAssessment {
+    const redFlags: string[] = [];
+    const possibleConditions: string[] = [];
+    const recommendedAssessment: string[] = [];
+    const emergencyAction: string[] = [];
+
+    const symptoms = caseData.symptoms.map((s) => s.toLowerCase());
+
+    const spo2 = caseData.vitalSigns?.oxygenSaturation;
+    const rr = caseData.vitalSigns?.respiratoryRate;
+
+    // Oxygen saturation assessment
+    if (spo2 !== undefined) {
+      if (spo2 < 90) {
+        redFlags.push("Severe hypoxemia");
+      } else if (spo2 < 94) {
+        redFlags.push("Reduced oxygen saturation");
+      }
+    }
+
+    // Respiratory rate assessment
+    if (rr !== undefined && rr > 30) {
+      redFlags.push("Marked tachypnea");
+    }
+
+    // Major respiratory symptoms
+    if (symptoms.includes("shortness of breath") ||
+        symptoms.includes("difficulty breathing") ||
+        symptoms.includes("dyspnea")) {
+      possibleConditions.push("Pneumonia");
+      possibleConditions.push("Asthma");
+      possibleConditions.push("Acute respiratory infection");
+      possibleConditions.push("Heart failure");
+      possibleConditions.push("Pulmonary embolism");
+    }
+
+    if (symptoms.includes("cough")) {
+      possibleConditions.push("Upper respiratory tract infection");
+      possibleConditions.push("Lower respiratory tract infection");
+      possibleConditions.push("Pneumonia");
+      possibleConditions.push("Tuberculosis");
+    }
+
+    if (symptoms.includes("wheezing")) {
+      possibleConditions.push("Asthma");
+      possibleConditions.push("COPD");
+      possibleConditions.push("Bronchospasm");
+    }
+
+    if (symptoms.includes("chest pain")) {
+      possibleConditions.push("Pneumonia");
+      possibleConditions.push("Pulmonary embolism");
+      possibleConditions.push("Pneumothorax");
+      possibleConditions.push("Cardiac causes");
+    }
+
+    if (symptoms.includes("hemoptysis")) {
+      possibleConditions.push("Tuberculosis");
+      possibleConditions.push("Pneumonia");
+      possibleConditions.push("Bronchiectasis");
+      possibleConditions.push("Pulmonary embolism");
+    }
+
+    // Recommended clinical assessment
+    recommendedAssessment.push("Assess airway and breathing");
+    recommendedAssessment.push("Measure respiratory rate");
+    recommendedAssessment.push("Measure oxygen saturation");
+    recommendedAssessment.push("Check temperature");
+    recommendedAssessment.push("Perform chest examination");
+    recommendedAssessment.push("Assess work of breathing");
+    recommendedAssessment.push("Take relevant medical history");
+
+    // Emergency signs
+    if (redFlags.length > 0) {
+      emergencyAction.push("Perform immediate ABC assessment");
+      emergencyAction.push("Assess oxygenation and respiratory effort");
+      emergencyAction.push("Escalate urgently if the patient is deteriorating");
+    }
+
+    let severity: RespiratoryAssessment["severity"] = "unknown";
+
+    if (spo2 !== undefined && spo2 < 90) {
+      severity = "critical";
+    } else if (redFlags.length >= 2) {
+      severity = "severe";
+    } else if (redFlags.length === 1) {
+      severity = "moderate";
+    } else if (symptoms.length > 0) {
+      severity = "mild";
+    }
+
+    return {
+      severity,
+      redFlags,
+      possibleConditions: [...new Set(possibleConditions)],
+      recommendedAssessment,
+      emergencyAction,
+    };
+  }
+}
