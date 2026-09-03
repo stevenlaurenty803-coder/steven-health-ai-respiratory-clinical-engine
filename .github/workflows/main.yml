@@ -1,122 +1,50 @@
-export interface RespiratoryCase {
-  age?: number;
-  sex?: string;
-  symptoms: string[];
-  duration?: string;
-  vitalSigns?: {
-    respiratoryRate?: number;
-    oxygenSaturation?: number;
-    temperature?: number;
-    heartRate?: number;
-  };
-}
+name: Build Steven Health AI APK
 
-export interface RespiratoryAssessment {
-  severity: "mild" | "moderate" | "severe" | "critical" | "unknown";
-  redFlags: string[];
-  possibleConditions: string[];
-  recommendedAssessment: string[];
-  emergencyAction: string[];
-}
+on:
+  workflow_dispatch:
 
-export class RespiratoryClinicalEngine {
-  assessCase(caseData: RespiratoryCase): RespiratoryAssessment {
-    const redFlags: string[] = [];
-    const possibleConditions: string[] = [];
-    const recommendedAssessment: string[] = [];
-    const emergencyAction: string[] = [];
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    const symptoms = caseData.symptoms.map((s) => s.toLowerCase());
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_API_URL: "https://openrouter.ai/api/v1/chat/completions"
+      OPENROUTER_MODEL: "openai/gpt-4o-mini"
 
-    const spo2 = caseData.vitalSigns?.oxygenSaturation;
-    const rr = caseData.vitalSigns?.respiratoryRate;
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    // Oxygen saturation assessment
-    if (spo2 !== undefined) {
-      if (spo2 < 90) {
-        redFlags.push("Severe hypoxemia");
-      } else if (spo2 < 94) {
-        redFlags.push("Reduced oxygen saturation");
-      }
-    }
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
-    // Respiratory rate assessment
-    if (rr !== undefined && rr > 30) {
-      redFlags.push("Marked tachypnea");
-    }
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
-    // Major respiratory symptoms
-    if (symptoms.includes("shortness of breath") ||
-        symptoms.includes("difficulty breathing") ||
-        symptoms.includes("dyspnea")) {
-      possibleConditions.push("Pneumonia");
-      possibleConditions.push("Asthma");
-      possibleConditions.push("Acute respiratory infection");
-      possibleConditions.push("Heart failure");
-      possibleConditions.push("Pulmonary embolism");
-    }
+      - name: Install dependencies
+        run: npm install
 
-    if (symptoms.includes("cough")) {
-      possibleConditions.push("Upper respiratory tract infection");
-      possibleConditions.push("Lower respiratory tract infection");
-      possibleConditions.push("Pneumonia");
-      possibleConditions.push("Tuberculosis");
-    }
+      - name: Build web app
+        run: npm run build
 
-    if (symptoms.includes("wheezing")) {
-      possibleConditions.push("Asthma");
-      possibleConditions.push("COPD");
-      possibleConditions.push("Bronchospasm");
-    }
+      - name: Sync Capacitor Android
+        run: npx cap sync android
 
-    if (symptoms.includes("chest pain")) {
-      possibleConditions.push("Pneumonia");
-      possibleConditions.push("Pulmonary embolism");
-      possibleConditions.push("Pneumothorax");
-      possibleConditions.push("Cardiac causes");
-    }
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
 
-    if (symptoms.includes("hemoptysis")) {
-      possibleConditions.push("Tuberculosis");
-      possibleConditions.push("Pneumonia");
-      possibleConditions.push("Bronchiectasis");
-      possibleConditions.push("Pulmonary embolism");
-    }
+      - name: Build Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
 
-    // Recommended clinical assessment
-    recommendedAssessment.push("Assess airway and breathing");
-    recommendedAssessment.push("Measure respiratory rate");
-    recommendedAssessment.push("Measure oxygen saturation");
-    recommendedAssessment.push("Check temperature");
-    recommendedAssessment.push("Perform chest examination");
-    recommendedAssessment.push("Assess work of breathing");
-    recommendedAssessment.push("Take relevant medical history");
-
-    // Emergency signs
-    if (redFlags.length > 0) {
-      emergencyAction.push("Perform immediate ABC assessment");
-      emergencyAction.push("Assess oxygenation and respiratory effort");
-      emergencyAction.push("Escalate urgently if the patient is deteriorating");
-    }
-
-    let severity: RespiratoryAssessment["severity"] = "unknown";
-
-    if (spo2 !== undefined && spo2 < 90) {
-      severity = "critical";
-    } else if (redFlags.length >= 2) {
-      severity = "severe";
-    } else if (redFlags.length === 1) {
-      severity = "moderate";
-    } else if (symptoms.length > 0) {
-      severity = "mild";
-    }
-
-    return {
-      severity,
-      redFlags,
-      possibleConditions: [...new Set(possibleConditions)],
-      recommendedAssessment,
-      emergencyAction,
-    };
-  }
-}
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Steven-Health-AI-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
